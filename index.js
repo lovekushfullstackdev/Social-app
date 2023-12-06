@@ -19,6 +19,7 @@ app.get('/getUsersList', auth.verifyAuthToken,firstController.getAllUsers)
 app.post('/createUser', firstController.createUser)
 app.post('/userLogin', firstController.userLogin)
 app.post('/deleteUser', firstController.deleteUser)
+app.post('/updateProfile',auth.verifyAuthToken,firstController.updateProfile)
 
 app.get('/', function(req, res) {
   res.send('Hello Sir')

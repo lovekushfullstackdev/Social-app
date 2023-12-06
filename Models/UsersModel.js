@@ -3,7 +3,7 @@ var jwt = require('jsonwebtoken');
 const dotenv = require('dotenv');
 dotenv.config();
 const bcrypt=require('bcrypt')
-
+const common=require('./../helper/Common')
 const createUser=(newUser,result)=>{
     let email=newUser?.email;
     conn.query("Select count(id) as count from users where email=?",email,(err,res)=>{
@@ -19,6 +19,9 @@ const createUser=(newUser,result)=>{
                         return;
                     }else{
                         console.log("res",res);
+                        let body="Thanks for Sign Up";
+                        common.sendMail(email,"Registration",body);
+                        
                         result(null,{ id: res.insertId, ...newUser })
                     }
                 })

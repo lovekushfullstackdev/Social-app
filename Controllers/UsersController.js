@@ -32,6 +32,10 @@ const createUser=async(req,res)=>{
 }
 
 const getAllUsers=(req,res)=>{
+    let token=req.headers['authorization'];
+    
+    let users_data = common.getTokenData(token);
+    console.log("users_data",users_data);
     usersModel.getAllUsers((err,data)=>{
         if(err){
             res.json({status:false,message:err.message || "Error while fetching records!"})
@@ -65,9 +69,21 @@ const userLogin=(req,res)=>{
     })
 }
 
+const updateProfile=(req,res)=>{
+    try{
+        let params=req.body;
+        if(!params.name || !params.mobile || !params.address || !params.profile_pic){
+            res.json({success:false,message:"All fields are required."});
+        }
+    }catch(error){
+        res.json({status:false,message:error.message})
+    }
+}
+
 module.exports={
     createUser,
     getAllUsers,
     deleteUser,
-    userLogin
+    userLogin,
+    updateProfile
 }

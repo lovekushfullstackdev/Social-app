@@ -10,14 +10,17 @@ const verifyAuthToken=(req,res,next)=>{
         res.json({status:false,message:"Auth header is missing"})
     }else{
         let getToken=token.split(' ')
-        var decoded = jwt.verify(getToken[1], TOKEN_KEY);
-        if(decoded){
-            if(decoded?.iat<=decoded?.exp){
-                next();
-            } else{
-                res.json({status:false,message:"Auth token is expired."})
+        jwt.verify(getToken[1], TOKEN_KEY,(err,decoded)=>{
+            if(err){
+                res.json({status:false,message:"Incorrect token"})
+            }else{
+                if(decoded?.iat<=decoded?.exp){
+                    next();
+                } else{
+                    res.json({status:false,message:"Auth token is expired."})
+                }
             }
-        }
+        });
     }
 
 }
