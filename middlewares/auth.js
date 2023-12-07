@@ -4,7 +4,6 @@ dotenv.config();
 
 const verifyAuthToken=(req,res,next)=>{
     const TOKEN_KEY = process.env.TOKEN_KEY;
-
     let token=req.headers['authorization'];
     if(!token){
         res.json({status:false,message:"Auth header is missing"})

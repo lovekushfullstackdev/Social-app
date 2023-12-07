@@ -19,8 +19,8 @@ const createUser=(newUser,result)=>{
                         return;
                     }else{
                         console.log("res",res);
-                        let body="Thanks for Sign Up";
-                        common.sendMail(email,"Registration",body);
+                        // let body="Thanks for Sign Up";
+                        // common.sendMail(email,"Registration",body);
                         
                         result(null,{ id: res.insertId, ...newUser })
                     }
@@ -68,5 +68,45 @@ const getAllUsers=(result)=>{
     })
 }
 
+const updateProfile=(user,token,result)=>{
+    try{
+        let token_data=common.getTokenData(token)
 
-module.exports={createUser,userLogin,getAllUsers}
+        conn.query("update users set ? where id=?",[user,token_data?.id],(err,updated_user)=>{
+            if(err){
+                result(err,null)
+            }else{
+                result(null,user)
+            }
+        })
+    }catch(error){
+
+    }
+}
+
+const upload_post=(post,token,result)=>{
+    try{
+        let data=common.getTokenData(token)
+        if(data){
+            let user_id=data.id;
+            post.user_id=user_id;
+            conn.query("insert into posts set ?",post,(err,row)=>{
+                if(err){
+                    result(err,null)
+                }else{
+                    result(null,row)
+                }
+            })
+        }
+    }catch(error){
+        result(error,null)
+    }
+}
+
+module.exports={
+    createUser,
+    userLogin,
+    getAllUsers,
+    updateProfile,
+    upload_post,
+}
