@@ -5,7 +5,6 @@ const dotenv = require('dotenv');
 dotenv.config();
 
 
-const fs = require('fs');
 const AWS = require('aws-sdk');
 
 // Configure AWS credentials
@@ -63,7 +62,7 @@ const getTokenData=(token)=>{
     }
 }
 
-const upload_post=async(file)=>{
+const upload_image=async(file,result)=>{
     try{
         if(file){
             // Create an S3 service object
@@ -79,19 +78,18 @@ const upload_post=async(file)=>{
                 Body: file.data,
                 ACL: 'public-read', // Set access control level
             };
-
-            await s3.upload(params, (err, data) => {
+            
+            s3.upload(params, (err, data) => {
                 if (err) {
                   console.error(err);
-                  return false;
+                  return result(err,null);
                 }
-                console.log('File uploaded successfully. URL:', data.Location);
-                return data.Location;
+                return result(null,data.Location);
             });
 
         }
     }catch(error){
-        return false;
+        return result(error,null);
     }
 }
 
@@ -99,5 +97,5 @@ module.exports={
     passwordEncrypt,
     sendMail,
     getTokenData,
-    upload_post,
+    upload_image,
 }

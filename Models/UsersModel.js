@@ -102,6 +102,69 @@ const upload_post=(post,token,result)=>{
         result(error,null)
     }
 }
+const get_user_profile=(user_id,result)=>{
+    try{
+        conn.query("select * from users where id=?",user_id,(err,row)=>{
+            if(err){
+                result(err,row);
+            }else{
+                result(null,row);
+            }
+        })
+    }catch(error){
+        result(error,null)
+    }
+}
+
+const get_user_posts=(user_id,result)=>{
+    try{
+        conn.query("select * from posts where user_id=?",user_id,(err,rows)=>{
+            if(err){
+                result(err,rows);
+            }else{
+                result(null,rows);
+            }
+        })
+    }catch(error){
+        result(error,null);
+    }
+}
+
+const get_all_posts=(result)=>{
+    try{
+        conn.query("select * from posts where isDeleted=0 and status=1 order by uploaded_at desc ",(err,rows)=>{
+            if(err){
+                result(err,rows);
+            }else{
+                result(null,rows);
+            }
+        })
+    }catch(error){
+        result(error,null);
+    }
+}
+
+const delete_post=(user_id,post_id,result)=>{
+    try{
+        if(post_id){
+            console.log("post_id",post_id);
+            console.log("user_id",user_id);
+            conn.query("update posts set isDeleted=1 where id=? and user_id=?",[post_id,user_id],(err,row)=>{
+                if(err){
+                    result(err,null)
+                }else{
+                    if(row.affectedRows){
+                        result(null,row)
+                    }else{
+                        result({message:"You are trying to access wrong data."},null)
+                    }
+                }
+            })
+        }
+    }catch(error){
+        result(error,null)
+    }
+}
 
 module.exports={
     createUser,
@@ -109,4 +172,8 @@ module.exports={
     getAllUsers,
     updateProfile,
     upload_post,
+    get_user_profile,
+    get_user_posts,
+    get_all_posts,
+    delete_post,
 }

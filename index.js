@@ -22,7 +22,11 @@ app.post('/createUser', firstController.createUser)
 app.post('/userLogin', firstController.userLogin)
 app.post('/deleteUser', firstController.deleteUser)
 app.post('/updateProfile',auth.verifyAuthToken,firstController.updateProfile)
-app.post('/upload_post',firstController.upload_post);
+app.post('/upload_post',auth.verifyAuthToken,firstController.upload_post);
+app.get('/get_user_profile',auth.verifyAuthToken,firstController.get_user_profile);
+app.get('/get_user_posts',auth.verifyAuthToken,firstController.get_user_posts);
+app.get('/get_all_posts',auth.verifyAuthToken,firstController.get_all_posts);
+app.post('/delete_post',auth.verifyAuthToken,firstController.delete_post)
 
 app.listen(port, hostname, () => {
   console.log(`Server running at http://${hostname}:${port}/`);

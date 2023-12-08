@@ -1,7 +1,7 @@
-const conne=require('./../config/Config')
 const usersModel=require('./../Models/UsersModel')
 const common = require('./../helper/Common')
 
+/*******User Sign-Up*****/
 const createUser=async(req,res)=>{
     let params=req.body;
     if(!params.name || !params.email || !params.mobile || !params.password || !params.address){
@@ -28,9 +28,9 @@ const createUser=async(req,res)=>{
             }
         })
     }
-    // res.json({message:"Created user successfully"});
 }
 
+/*******Fetched all the users*****/
 const getAllUsers=(req,res)=>{
     let token=req.headers['authorization'];
     
@@ -53,6 +53,7 @@ const deleteUser=(req,res)=>{
     res.send("deleteUser");
 }
 
+/*******User's login*****/
 const userLogin=(req,res)=>{
     let params=req.body;
     if(!params?.email || !params?.password){
@@ -73,18 +74,17 @@ const userLogin=(req,res)=>{
 
 }
 
+/*******update user's profile*****/
 const updateProfile=async(req,res)=>{
     try{
         let params=req.body;
         let files=req.files;
 
-        let sampleFile;
-        let uploadPath;
-
         if(!params.name || !params.mobile || !params.address){
             res.json({success:false,message:"All fields are required."});
         }else{
-
+            // let sampleFile;
+            // let uploadPath;
             // The name of the input field (i.e. "sampleFile") is used to retrieve the uploaded file
             // if(req.files && req.files.profile_pic){
             //     sampleFile = req.files.profile_pic;
@@ -97,11 +97,7 @@ const updateProfile=async(req,res)=>{
             //     });
     
             // }
-            let file_status=false;
-            if(files && files.profile_pic){
-                file_status=await common.upload_post(files.profile_pic);
-            }
-            console.log("file_status",file_status);
+            
             let token=req.headers['authorization'];
             let user={
                 name:params?.name,
@@ -111,59 +107,155 @@ const updateProfile=async(req,res)=>{
             }
             
             if(files && files.profile_pic){
-                user.profile_pic=file_status;
+                await common.upload_image(files.profile_pic,(err,result)=>{
+                    user.profile_pic=result;
+                    usersModel.updateProfile(user,token,(err,result)=>{
+                        if(err){
+                            res.json({status:false,message:err.message || "Some error occured."})
+                        }else{
+                            res.json({status:true,message:"Your profile has been updated.",body:result})
+                        }
+                    })
+                });
+            }else{
+                usersModel.updateProfile(user,token,(err,result)=>{
+                    if(err){
+                        res.json({status:false,message:err.message || "Some error occured."})
+                    }else{
+                        res.json({status:true,message:"Your profile has been updated.",body:result})
+                    }
+                })
             }
+           
 
-            usersModel.updateProfile(user,token,(err,result)=>{
-                if(err){
-                    res.json({status:false,message:err.message || "Some error occured."})
-                }else{
-                    res.json({status:true,message:"Your profile has been updated.",body:result})
-                }
-            })
+            
         }
     }catch(error){
         res.json({status:false,message:error.message})
     }
 }
 
+/*******Upload a post*****/
+
 const upload_post=async(req,res)=>{
     try{
         let params=req.body;
-        let file=req.files;
-        if(!params.title || !params.description || !file.post_img){
+        let files=req.files;
+        if(!params.title || !params.description || !files.post_img){
             res.json({status:false,message:"All fields are required."})
         }else{
-            // The name of the input field (i.e. "sampleFile") is used to retrieve the uploaded file
-            let sampleFile = req.files.post_img;
-            let uploadPath = './uploads/' +Date.now()+sampleFile.name;
-
-            // Use the mv() method to place the file somewhere on your server
-            let post_img='';
-            await sampleFile.mv(uploadPath, function(err) {
-                if (err)
-                return res.status(500).send(err);
-            });
             let token=req.headers['authorization'];
+            let status=1;
+            if(params.status!=undefined){
+                status=params.status;
+            }
             let post={
                 title:params?.title,
                 description:params?.description,
-                post_img:uploadPath,
+                status:status,
                 uploaded_at:new Date(),
                 created_at:new Date(),
                 updated_at:new Date()
             } 
-            usersModel.upload_post(post,token,(err,result)=>{
-                if(err){
-                    res.json({status:false,message:err.message || "Something wrong."})
-                }else{
-                    res.json({status:true,message:"Your post has been uploaded.",body:result})
-                }
-            })
+
+            if(files && files.post_img){
+                common.upload_image(files.post_img,(err,result)=>{
+                    if(err){
+                        res.json({status:false,message:err.message || "Something wrong."})
+                    }else{
+                        post.post_img=result;
+                        usersModel.upload_post(post,token,(err,result)=>{
+                            if(err){
+                                res.json({status:false,message:err.message || "Something wrong."})
+                            }else{
+                                res.json({status:true,message:"Your post has been uploaded.",body:result})
+                            }
+                        })
+                    }
+                })
+            }
+
             
         }
     }catch(error){
         res.json({status:false,message:error})
+    }
+}
+
+/*******Fetching logged in user's details*****/
+const get_user_profile=(req,res)=>{
+    try{
+        let token=req.headers['authorization'];
+            let data=common.getTokenData(token)
+            if(data){
+                usersModel.get_user_profile(data.id,(err,result)=>{
+                    if(err){
+                        res.json({status:false,message:err.message});
+                    }else{
+                        res.json({status:true,message:"Record has been fetched!",data:result})
+                    }
+                })
+            }
+    }catch(error){
+
+    }
+}
+
+/*******Fetching logged in user's posts*****/
+const get_user_posts=(req,res)=>{
+    try{
+        let token=req.headers['authorization'];
+        let data=common.getTokenData(token)
+        if(data){
+            usersModel.get_user_posts(data.id,(err,result)=>{
+                if(err){
+                    res.json({status:false,message:err.message});
+                }else{
+                    res.json({status:true,message:"Your posts have been fetched.",data:result})
+                }
+            })
+        }
+    }catch(error){
+        res.json({status:false,message:error})
+    }
+}
+/*******Fetching all posts*****/
+const get_all_posts=(req,res)=>{
+    try{
+        usersModel.get_all_posts((err,result)=>{
+            if(err){
+                res.json({status:false,message:err.message});
+            }else{
+                res.json({status:true,message:"Posts have been fetched.",data:result})
+            }
+        })
+    }catch(error){
+        res.json({status:false,message:error})
+    }
+}
+
+const delete_post=(req,res)=>{
+    try{
+        let params=req.body;
+        if(!params.post_id){
+            res.json({status:false,message:"Post id is missing."})
+        }else{
+            let post_id=params.post_id;
+            let token=req.headers['authorization']
+            let data=common.getTokenData(token)
+            if(data){
+                usersModel.delete_post(data.id,post_id,(err,result)=>{
+
+                    if(err){
+                        res.json({status:false,message:err.message})
+                    }else{
+                        res.json({status:true,message:"Post has been deleted."})
+                    }
+                })
+            }
+        }
+    }catch(error){
+        res.json({status:false,message:error.message})
     }
 }
 
@@ -173,5 +265,9 @@ module.exports={
     deleteUser,
     userLogin,
     updateProfile,
-    upload_post
+    upload_post,
+    get_user_profile,
+    get_user_posts,
+    get_all_posts,
+    delete_post
 }
