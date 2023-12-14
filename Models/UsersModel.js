@@ -147,8 +147,6 @@ const get_all_posts=(result)=>{
 const delete_post=(user_id,post_id,result)=>{
     try{
         if(post_id){
-            console.log("post_id",post_id);
-            console.log("user_id",user_id);
             conn.query("update posts set isDeleted=1 where id=? and user_id=?",[post_id,user_id],(err,row)=>{
                 if(err){
                     result(err,null)

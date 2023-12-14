@@ -1,5 +1,6 @@
 const usersModel=require('./../Models/UsersModel')
 const common = require('./../helper/Common')
+const stripe = require('stripe')("sk_test_51OMPOYSIa9B2WEB5Khp2CY01ZHSHziw53DnFL0l2OqyEWVlWBaTYQSUEEAT61zysrByjshBAjWTxtUTXCm4V4Sa900pEDTj5aT");
 
 /*******User Sign-Up*****/
 const createUser=async(req,res)=>{
@@ -259,6 +260,59 @@ const delete_post=(req,res)=>{
     }
 }
 
+const createPaymentIntent=async(req,res)=>{
+    try {
+        
+        const session = await stripe.checkout.sessions.create({
+            payment_method_types:["card"],
+            success_url: 'http://localhost:3000/success',
+            cancel_url: 'http://localhost:3000/cancel',
+            line_items: [
+              {
+                price_data:{
+                    currency:'inr',
+                    product_data:{
+                        name:"T-shirt"
+                    },
+                    unit_amount:20*100,
+                },
+                quantity: 2
+              },
+            ],
+            mode: 'payment',
+          });
+        
+        console.log("sessions-->>",session);
+        res.json({ success: true,message:"Session created successfully.",id:session.id});
+
+        // Create a PaymentIntent with returnUrl
+        // const paymentIntent = await stripe.paymentIntents.create({
+        //   amount,
+        //   currency,
+        //   payment_method: paymentMethodId,
+        //   confirmation_method: 'manual',
+        //   confirm: true,
+        //   return_url: returnUrl, // Set the return_url
+        // });
+
+        // // Handle the result of the PaymentIntent confirmation
+        // if (paymentIntent.status === 'requires_action' || paymentIntent.status === 'requires_source_action') {
+        //   // Additional action required, you may need to handle this on the client
+        //   res.json({ success: true, requiresAction: true, paymentIntentClientSecret: paymentIntent.client_secret });
+        // } else if (paymentIntent.status === 'succeeded') {
+        //   // Payment succeeded
+        //   res.json({ success: true, message: 'Payment succeeded!' });
+        // } else {
+        //   // Payment failed
+        //   res.json({ success: false, message: 'Payment failed.' });
+        // }
+      } catch (error) {
+        console.error(error);
+        res.json({ success: false, message: 'Error confirming payment.' });
+      }
+      
+}
+
 module.exports={
     createUser,
     getAllUsers,
@@ -269,5 +323,6 @@ module.exports={
     get_user_profile,
     get_user_posts,
     get_all_posts,
-    delete_post
+    delete_post,
+    createPaymentIntent,
 }

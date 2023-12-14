@@ -5,9 +5,11 @@ const app = express()
 const firstController = require('./Controllers/UsersController')
 const auth = require('./middlewares/auth')
 const bodyParser = require("body-parser");
+var cors = require('cors')
 
 const http = require('http');
 var fileupload=  require('express-fileupload');
+app.use(cors())
 
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
@@ -26,7 +28,8 @@ app.post('/upload_post',auth.verifyAuthToken,firstController.upload_post);
 app.get('/get_user_profile',auth.verifyAuthToken,firstController.get_user_profile);
 app.get('/get_user_posts',auth.verifyAuthToken,firstController.get_user_posts);
 app.get('/get_all_posts',auth.verifyAuthToken,firstController.get_all_posts);
-app.post('/delete_post',auth.verifyAuthToken,firstController.delete_post)
+app.post('/delete_post',auth.verifyAuthToken,firstController.delete_post);
+app.post('/create-payment-intent',firstController.createPaymentIntent);
 
 app.listen(port, hostname, () => {
   console.log(`Server running at http://${hostname}:${port}/`);
