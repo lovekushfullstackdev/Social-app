@@ -5,6 +5,8 @@ const stripe = require('stripe')("sk_test_51OMPOYSIa9B2WEB5Khp2CY01ZHSHziw53DnFL
 /*******User Sign-Up*****/
 const createUser=async(req,res)=>{
     let params=req.body;
+    console.log(params);
+
     if(!params.name || !params.email || !params.mobile || !params.password || !params.address){
         res.json({success:false,message:"All fields are required."});
     }else{
@@ -80,7 +82,6 @@ const updateProfile=async(req,res)=>{
     try{
         let params=req.body;
         let files=req.files;
-
         if(!params.name || !params.mobile || !params.address){
             res.json({success:false,message:"All fields are required."});
         }else{

@@ -132,7 +132,7 @@ const get_user_posts=(user_id,result)=>{
 
 const get_all_posts=(result)=>{
     try{
-        conn.query("select * from posts where isDeleted=0 and status=1 order by uploaded_at desc ",(err,rows)=>{
+        conn.query("select * from posts INNER JOIN users on posts.user_id=users.id  where isDeleted=0 and status=1 order by uploaded_at desc ",(err,rows)=>{
             if(err){
                 result(err,rows);
             }else{
