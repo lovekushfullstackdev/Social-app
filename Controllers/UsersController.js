@@ -82,6 +82,7 @@ const updateProfile=async(req,res)=>{
     try{
         let params=req.body;
         let files=req.files;
+        console.log("params",files);
         if(!params.name || !params.mobile || !params.address){
             res.json({success:false,message:"All fields are required."});
         }else{
@@ -143,7 +144,8 @@ const upload_post=async(req,res)=>{
     try{
         let params=req.body;
         let files=req.files;
-        if(!params.title || !params.description || !files.post_img){
+        console.log("params",files);
+        if(!params.description || !files.post_img){
             res.json({status:false,message:"All fields are required."})
         }else{
             let token=req.headers['authorization'];
@@ -152,7 +154,7 @@ const upload_post=async(req,res)=>{
                 status=params.status;
             }
             let post={
-                title:params?.title,
+                // title:params?.title,
                 description:params?.description,
                 status:status,
                 uploaded_at:new Date(),
@@ -224,7 +226,13 @@ const get_user_posts=(req,res)=>{
 /*******Fetching all posts*****/
 const get_all_posts=(req,res)=>{
     try{
-        usersModel.get_all_posts((err,result)=>{
+        let token=req.headers['authorization'];
+        let data=common.getTokenData(token)
+        let user_id=1;
+        if(data){
+            user_id=data.id;
+        }
+        usersModel.get_all_posts(user_id,(err,result)=>{
             if(err){
                 res.json({status:false,message:err.message});
             }else{
@@ -314,6 +322,33 @@ const createPaymentIntent=async(req,res)=>{
       
 }
 
+
+const post_like=(req,res)=>{
+    try{
+        let params=req.body;
+        if(!params.post_id){
+            res.json({status:false,message:"All field are required."})
+        }else{
+            let token=req.headers['authorization'];
+            let data=common.getTokenData(token)
+            if(data){
+                let post_id=params.post_id;
+                let user_id=data.id;
+                usersModel.post_like(post_id,user_id,(err,result)=>{
+                    if(err){
+                        res.json({status:false,message:err.message});
+                    }else{
+                        res.json({status:true,message:result})
+                    }
+                })
+            }
+
+        }
+    }catch(error){
+        console.log("error",error);
+    }
+}
+
 module.exports={
     createUser,
     getAllUsers,
@@ -326,4 +361,5 @@ module.exports={
     get_all_posts,
     delete_post,
     createPaymentIntent,
+    post_like,
 }

@@ -130,9 +130,9 @@ const get_user_posts=(user_id,result)=>{
     }
 }
 
-const get_all_posts=(result)=>{
+const get_all_posts=(user_id,result)=>{
     try{
-        conn.query("select * from posts INNER JOIN users on posts.user_id=users.id  where isDeleted=0 and status=1 order by uploaded_at desc ",(err,rows)=>{
+        conn.query("SELECT *, posts.id as p_id, (select count(id) from post_likes where post_id=posts.id and is_like=1) as total_likes FROM posts LEFT JOIN post_likes ON posts.id = post_likes.post_id and post_likes.user_id=? LEFT JOIN users on posts.user_id=users.id ORDER BY posts.id DESC ",user_id,(err,rows)=>{
             if(err){
                 result(err,rows);
             }else{
@@ -164,6 +164,47 @@ const delete_post=(user_id,post_id,result)=>{
     }
 }
 
+const post_like=(post_id,user_id,result)=>{
+    try{
+        let current_date=new Date();
+        let data={
+            post_id:post_id,
+            user_id:user_id,
+            is_like:1,
+            // created_at:current_date,
+            updated_at:current_date
+        }
+        conn.query("select is_like,id from post_likes where user_id=? and post_id=?",[user_id,post_id],(err,rows)=>{
+
+            if(rows.length){
+                data.is_like=!rows[0].is_like;
+                let message="The post has been liked."
+                if(!data.is_like){
+                    message="The post has been removed from like."
+                }
+                conn.query("update post_likes set ? where post_id=? and user_id=?",[data,post_id,user_id],(err,res)=>{
+                    if(err){
+                        result(err,null)
+                    }else{
+                        result(null,message)
+                    }
+                })
+            }else{
+                data.created_at=current_date;
+                conn.query("insert into post_likes set ?",data,(err,res)=>{
+                    if(err){
+                        result(err,null)
+                    }else{
+                        result(null,"The post has been liked.")
+                    }
+                })
+            }
+        })
+    }catch(error){
+        result(error,null)
+    }
+}
+
 module.exports={
     createUser,
     userLogin,
@@ -174,4 +215,5 @@ module.exports={
     get_user_posts,
     get_all_posts,
     delete_post,
+    post_like,
 }

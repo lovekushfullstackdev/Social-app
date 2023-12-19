@@ -30,6 +30,7 @@ app.get('/get_user_posts',auth.verifyAuthToken,firstController.get_user_posts);
 app.get('/get_all_posts',auth.verifyAuthToken,firstController.get_all_posts);
 app.post('/delete_post',auth.verifyAuthToken,firstController.delete_post);
 app.post('/create-payment-intent',firstController.createPaymentIntent);
+app.post('/post-like',auth.verifyAuthToken,firstController.post_like);
 
 app.listen(port, hostname, () => {
   console.log(`Server running at http://${hostname}:${port}/`);
