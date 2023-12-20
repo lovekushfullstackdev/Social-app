@@ -349,6 +349,105 @@ const post_like=(req,res)=>{
     }
 }
 
+
+const post_comment=(req,res)=>{
+    try{
+        let params=req.body;
+        if(!params.comment || !params.post_id){
+            res.json({
+                status:false,
+                message:"All fields are required."
+            })
+        }else{
+            let token=req.headers['authorization']
+            let data=common.getTokenData(token)
+
+            if(data){
+                let user_id=data.id;
+                let comment={
+                    post_id:params.post_id,
+                    comment:params.comment,
+                    commented_user_id:user_id
+                }
+                usersModel.post_comment(comment,(err,result)=>{
+                    if(err){
+                        res.json({
+                            status:false,
+                            message:err.message
+                        })
+                    }else{
+                        res.json({
+                            status:true,
+                            message:"Comment has been added"
+                        })
+                    }
+                })
+            }
+        }
+    }catch(error){
+
+    }
+}
+const get_post_comments=(req,res)=>{
+    try{
+        let params=req.params;
+        if(!params.post_id){
+            res.json({
+                status:false,
+                message:"All fields are required."
+            })
+        }else{
+            let post_id=params.post_id;
+            usersModel.get_post_comments(post_id,(err,result)=>{
+                if(err){
+                    res.json({
+                        status:false,
+                        message:err.message
+                    })
+                }else{
+                    res.json({
+                        status:true,
+                        message:"Comments have been fetched",
+                        body:result
+                    })
+                }
+            })
+        }
+    }catch(error){
+
+    }
+}
+
+const delete_post_comments=(req,res)=>{
+    try{
+        let params=req.params;
+        if(!params.id){
+            res.json({
+                status:false,
+                message:"All fields are required."
+            })
+        }else{
+            let comment_id=params.id;
+            usersModel.delete_post_comments(comment_id,(err,result)=>{
+                if(err){
+                    res.json({
+                        status:false,
+                        message:err.message
+                    })
+                }else{
+                    res.json({
+                        status:true,
+                        message:"Your comment has been deleted.",
+                        body:result
+                    })
+                }
+            })
+        }
+    }catch(error){
+        
+    }
+}
+
 module.exports={
     createUser,
     getAllUsers,
@@ -362,4 +461,7 @@ module.exports={
     delete_post,
     createPaymentIntent,
     post_like,
+    post_comment,
+    get_post_comments,
+    delete_post_comments,
 }

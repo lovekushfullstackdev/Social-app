@@ -132,7 +132,7 @@ const get_user_posts=(user_id,result)=>{
 
 const get_all_posts=(user_id,result)=>{
     try{
-        conn.query("SELECT *, posts.id as p_id, (select count(id) from post_likes where post_id=posts.id and is_like=1) as total_likes FROM posts LEFT JOIN post_likes ON posts.id = post_likes.post_id and post_likes.user_id=? LEFT JOIN users on posts.user_id=users.id ORDER BY posts.id DESC ",user_id,(err,rows)=>{
+        conn.query("SELECT *, posts.id as p_id, (select count(id) from post_likes where post_id=posts.id and is_like=1) as total_likes, (select count(id) from comments where post_id=posts.id) as total_comments FROM posts LEFT JOIN post_likes ON posts.id = post_likes.post_id and post_likes.user_id=? LEFT JOIN users on posts.user_id=users.id ORDER BY posts.id DESC ",user_id,(err,rows)=>{
             if(err){
                 result(err,rows);
             }else{
@@ -205,6 +205,63 @@ const post_like=(post_id,user_id,result)=>{
     }
 }
 
+const post_comment=(new_comment,result)=>{
+    try{
+        let current_date=new Date();
+        new_comment.commented_at=current_date;
+        new_comment.created_at=current_date;
+        new_comment.updated_at=current_date;
+        conn.query("select count(id) as count from posts where id=?",new_comment.post_id,(err,res)=>{
+            if(err){
+                result(err,null)
+            }else{
+                if(res[0].count>0){
+                    conn.query("insert into comments set ?",new_comment,(err,rows)=>{
+                        if(err){
+                            result(err,null)
+                        }else{
+                            result(null,rows)
+                        }
+                    })
+                }else{
+                    let err_message={
+                        message:"The post that you are looking for does not exist."
+                    }
+                    result(err_message,null)
+                }
+            }
+        })
+
+    }catch(error){
+        console.log("error",error);
+    }
+}
+const get_post_comments=(post_id,result)=>{
+    try{
+        conn.query("select *,comments.id as comment_id  from comments INNER JOIN users on comments.commented_user_id=users.id where post_id=? order by comments.commented_at DESC",post_id,(err,rows)=>{
+            if(err){
+                result(err,null)
+            }else{
+                result(null,rows)
+            }
+        })
+    }catch(error){
+
+    }
+}
+const delete_post_comments=(comment_id,result)=>{
+    try{
+        conn.query("Delete from comments where id=?",comment_id,(err,rows)=>{
+            if(err){
+                result(err,null)
+            }else{
+                result(null,rows)
+            }
+        })
+    }catch(error){
+
+    }
+}
 module.exports={
     createUser,
     userLogin,
@@ -216,4 +273,7 @@ module.exports={
     get_all_posts,
     delete_post,
     post_like,
+    post_comment,
+    get_post_comments,
+    delete_post_comments,
 }

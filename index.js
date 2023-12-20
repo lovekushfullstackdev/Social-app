@@ -31,6 +31,9 @@ app.get('/get_all_posts',auth.verifyAuthToken,firstController.get_all_posts);
 app.post('/delete_post',auth.verifyAuthToken,firstController.delete_post);
 app.post('/create-payment-intent',firstController.createPaymentIntent);
 app.post('/post-like',auth.verifyAuthToken,firstController.post_like);
+app.post('/post-comment',auth.verifyAuthToken,firstController.post_comment);
+app.get('/get-post-comments/:post_id',auth.verifyAuthToken,firstController.get_post_comments);
+app.delete('/delete-post-comments/:id',auth.verifyAuthToken,firstController.delete_post_comments);
 
 app.listen(port, hostname, () => {
   console.log(`Server running at http://${hostname}:${port}/`);
