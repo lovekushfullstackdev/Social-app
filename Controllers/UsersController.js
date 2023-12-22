@@ -37,9 +37,8 @@ const createUser=async(req,res)=>{
 const getAllUsers=(req,res)=>{
     let token=req.headers['authorization'];
     
-    let users_data = common.getTokenData(token);
-    console.log("users_data",users_data);
-    usersModel.getAllUsers((err,data)=>{
+    let user_data = common.getTokenData(token);
+    usersModel.getAllUsers(user_data,(err,data)=>{
         if(err){
             res.json({status:false,message:err.message || "Error while fetching records!"})
         }else{
@@ -98,7 +97,6 @@ const updateProfile=async(req,res)=>{
             //         if (err)
             //         return res.status(500).send(err);
             //     });
-    
             // }
             
             let token=req.headers['authorization'];

@@ -56,16 +56,21 @@ const userLogin=(userCred,result)=>{
     })
 }
 
-const getAllUsers=(result)=>{
-    conn.query("select * from users",(err,rows)=>{
-        if(err){
-            result(err,null)
-            return;
-        }else{
-            result(null,rows)
-            return ;
-        }
-    })
+const getAllUsers=(user_data,result)=>{
+    try{
+        conn.query("select * from users where id!=?",user_data.id,(err,rows)=>{
+            if(err){
+                result(err,null)
+                return;
+            }else{
+                result(null,rows)
+                return ;
+            }
+        })
+    }catch(error){
+
+    }
+
 }
 
 const updateProfile=(user,token,result)=>{
