@@ -1,33 +1,3 @@
-
-// const express = require('express');
-// const app = express();
-// const http = require("http");
-// const { Server } = require('socket.io');
-
-// const cors = require('cors')
-// app.use(cors());
-
-// const server = http.createServer(app)
-
-// const io=new Server(server,{
-//   cors:{
-//     origin:"http://localhost:3000",
-//     methods: ["GET","POST"],
-//   }
-// })
-
-// io.on("connection",(socket)=>{
-//   console.log("User connected.",socket.id);
-//   socket.on("chat_message",(data)=>{
-//     console.log("data",data);
-//     socket.emit("send_message",data)
-//   })
-// })
-
-// server.listen(3001, () => {
-//   console.log('Server listening on http://localhost:3001');
-// });
-
 const hostname = '192.168.5.205';
 const port = 8000;
 const express = require('express')
@@ -38,6 +8,9 @@ const bodyParser = require("body-parser");
 const { Server } = require('socket.io');
 const http = require('http');
 const server = http.createServer(app);
+const { v4: uuidv4 } = require('uuid');
+
+const conn=require("./config/Config")
 
 var cors = require('cors')
 
@@ -76,29 +49,77 @@ app.post('/post-like',auth.verifyAuthToken,firstController.post_like);
 app.post('/post-comment',auth.verifyAuthToken,firstController.post_comment);
 app.get('/get-post-comments/:post_id',auth.verifyAuthToken,firstController.get_post_comments);
 app.delete('/delete-post-comments/:id',auth.verifyAuthToken,firstController.delete_post_comments);
+app.get('/get-messages/:receiver_id',auth.verifyAuthToken,firstController.get_messages);
 
 
 io.on("connection",async(socket)=>{
   console.log("User connected.",socket.id);
   
   socket.on("join_room",(data)=>{
-    console.log('A user has joined room ' + data.room_id);
     socket.join(data.room_id)
+
+    let to_user_id=data.to_user_id;
+    let user_id=data.user_id;
+    getMeesages(user_id,to_user_id,(callbacks)=>{
+      io.to(data.room_id).emit("get_messages",callbacks)
+    })
   })
 
-  socket.on("receive_msg",(data)=>{
-    console.log("msg",data.msg);
-    socket.to(data.room_id).emit("send_msg",data.msg)
-  })
+  socket.on("send_msg",(data)=>{
 
-  socket.on("chat_message",(data)=>{
-    console.log("data",data);
-    socket.broadcast.emit("send_message",data)
+    let to_user_id=data.to_user_id;
+    let user_id=data.user_id;
+    let current_date=new Date();
+    
+    let message={
+      content: data.msg,
+      message_id:uuidv4(),
+      receiver_id: to_user_id,
+      sender_id: user_id,
+      timestamp: current_date
+    }
+
+    io.to(data.room_id).emit("receive_msg",{message:message,room_id:data.room_id})
+
+    newMessage(message,(callbacks)=>{
+      // io.to(data.room_id).emit("get_messages",callbacks)
+    })
   })
+  // socket.on("chat_message",(data)=>{
+  //   socket.broadcast.emit("send_message",data)
+  // })
 
 })
 
+const getMeesages=(user_id,to_user_id,callbacks)=>{
+  try{
+    conn.query("select * from messages where sender_id=? and receiver_id=? or receiver_id=? and sender_id=? order by timestamp",[user_id,to_user_id,user_id,to_user_id],(err,rows)=>{
+        if(err){
+          callbacks(false);
+        }else{
+          callbacks(rows);
+        }
+    })
+}catch(error){
 
+}
+}
+
+const newMessage=(new_message,callbacks)=>{
+  try{
+    console.log(new_message);
+    // conn.query("insert into messages set ?",new_message,(err,result)=>{
+      conn.query("INSERT INTO messages SET ?",new_message,(err,result)=>{
+      if(err){
+        callbacks(false)
+      }else{
+        callbacks(result)
+      }
+    })
+  }catch(error){
+
+  }
+}
 
 // app.listen(port, hostname, () => {
 //   console.log(`Server running at http://${hostname}:${port}/`);

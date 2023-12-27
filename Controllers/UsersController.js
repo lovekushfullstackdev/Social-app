@@ -446,6 +446,41 @@ const delete_post_comments=(req,res)=>{
     }
 }
 
+const get_messages=(req,res)=>{
+    try{
+        let params=req.params;
+        if(!params.receiver_id){
+            res.json({
+                status:false,
+                message:"All fields are required."
+            })
+        }else{
+            let token=req.headers['authorization'];
+            let data=common.getTokenData(token);
+            let user_id=0;
+            if(data){
+                user_id=data.id
+            }
+            usersModel.get_messages(user_id,params.receiver_id,(err,result)=>{
+                if(err){
+                    res.json({
+                        status:false,
+                        message:err.message
+                    })
+                }else{
+                    res.json({
+                        status:true,
+                        message:"Messages fetched successfully",
+                        body:result
+                    })
+                }
+            })
+        }
+    }catch(error){
+
+    }
+}
+
 module.exports={
     createUser,
     getAllUsers,
@@ -462,4 +497,5 @@ module.exports={
     post_comment,
     get_post_comments,
     delete_post_comments,
+    get_messages,
 }

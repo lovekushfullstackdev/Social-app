@@ -267,6 +267,20 @@ const delete_post_comments=(comment_id,result)=>{
 
     }
 }
+
+const get_messages=(user_id,receiver_id,result)=>{
+    try{
+        conn.query("select * from messages where sender_id=? and receiver_id=? or receiver_id=? and sender_id=?",[user_id,receiver_id,user_id,receiver_id],(err,rows)=>{
+            if(err){
+                result(err,null);
+            }else{
+                result(null,rows);
+            }
+        })
+    }catch(error){
+
+    }
+}
 module.exports={
     createUser,
     userLogin,
@@ -281,4 +295,5 @@ module.exports={
     post_comment,
     get_post_comments,
     delete_post_comments,
+    get_messages,
 }
