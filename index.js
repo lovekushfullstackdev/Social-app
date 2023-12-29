@@ -19,7 +19,7 @@ app.use(cors())
 
 const io=new Server(server,{
   cors:{
-    origin:"http://localhost:3000",
+    origin:"http://192.168.5.205:3000",
     methods: ["GET","POST"],
   }
 })
@@ -50,10 +50,13 @@ app.post('/post-comment',auth.verifyAuthToken,firstController.post_comment);
 app.get('/get-post-comments/:post_id',auth.verifyAuthToken,firstController.get_post_comments);
 app.delete('/delete-post-comments/:id',auth.verifyAuthToken,firstController.delete_post_comments);
 app.get('/get-messages/:receiver_id',auth.verifyAuthToken,firstController.get_messages);
+app.post('/logout-user',auth.verifyAuthToken,firstController.logout_user);
+app.get('/get-all-users',auth.verifyAuthToken,firstController.allUsers); // Add users in group
+// app.get('/get-group-users-',auth.verifyAuthToken,firstController.allUsers); // Add users in group
+app.post('/create-group',auth.verifyAuthToken,firstController.createGroup)
 
 
 io.on("connection",async(socket)=>{
-  console.log("User connected.",socket.id);
   
   socket.on("join_room",(data)=>{
     socket.join(data.room_id)
@@ -66,28 +69,59 @@ io.on("connection",async(socket)=>{
   })
 
   socket.on("send_msg",(data)=>{
+    let to_user_id = data.to_user_id;
+    let user_id = data.user_id;
+    let current_date = new Date();
+    let isFile = data.isFile;
+    let message={};
+    if(isFile && data.msg){
+      message=[{
+        message_id: uuidv4(),
+        content: "",
+        receiver_id: to_user_id,
+        sender_id: user_id,
+        file: data.file,
+        timestamp: current_date
+      },{
+        message_id:uuidv4(),
+        content: data.msg,
+        receiver_id: to_user_id,
+        sender_id: user_id,
+        file:"",
+        timestamp: current_date
+      }]
 
-    let to_user_id=data.to_user_id;
-    let user_id=data.user_id;
-    let current_date=new Date();
-    
-    let message={
-      content: data.msg,
-      message_id:uuidv4(),
-      receiver_id: to_user_id,
-      sender_id: user_id,
-      timestamp: current_date
+    }else if(isFile){
+      message=[{
+        content: data.msg,
+        message_id: uuidv4(),
+        receiver_id: to_user_id,
+        sender_id: user_id,
+        file: data.file,
+        timestamp: current_date
+      }]
     }
-
+    else{
+     message=[{
+        content: data.msg,
+        message_id:uuidv4(),
+        receiver_id: to_user_id,
+        sender_id: user_id,
+        timestamp: current_date
+      }]
+    }
+   
     io.to(data.room_id).emit("receive_msg",{message:message,room_id:data.room_id})
 
-    newMessage(message,(callbacks)=>{
-      // io.to(data.room_id).emit("get_messages",callbacks)
-    })
+    newMessage(message, (error, results) => {
+      if (error) {
+        // console.error('Error:', error);
+      } else {
+        // console.log('Results:', results);
+      }
+    });
+    
   })
-  // socket.on("chat_message",(data)=>{
-  //   socket.broadcast.emit("send_message",data)
-  // })
 
 })
 
@@ -95,7 +129,7 @@ const getMeesages=(user_id,to_user_id,callbacks)=>{
   try{
     conn.query("select * from messages where sender_id=? and receiver_id=? or receiver_id=? and sender_id=? order by timestamp",[user_id,to_user_id,user_id,to_user_id],(err,rows)=>{
         if(err){
-          callbacks(false);
+          callbacks(err);
         }else{
           callbacks(rows);
         }
@@ -105,21 +139,30 @@ const getMeesages=(user_id,to_user_id,callbacks)=>{
 }
 }
 
-const newMessage=(new_message,callbacks)=>{
-  try{
-    console.log(new_message);
-    // conn.query("insert into messages set ?",new_message,(err,result)=>{
-      conn.query("INSERT INTO messages SET ?",new_message,(err,result)=>{
-      if(err){
-        callbacks(false)
-      }else{
-        callbacks(result)
-      }
-    })
-  }catch(error){
+const newMessage = async (newMessages, callback) => {
+  try {
+    const insertPromises = newMessages.map((msg) => {
+      return new Promise((resolve, reject) => {
+        conn.query('INSERT INTO messages SET ?', msg, (err, result) => {
+          if (err) {
+            reject(err);
+          } else {
+            resolve(result);
+          }
+        });
+      });
+    });
 
+    // Wait for all insert queries to complete
+    const results = await Promise.all(insertPromises);
+
+    // Callback with the results
+    callback(null, results);
+  } catch (error) {
+    console.error('Error in newMessage:', error);
+    callback(error, null);
   }
-}
+};
 
 // app.listen(port, hostname, () => {
 //   console.log(`Server running at http://${hostname}:${port}/`);

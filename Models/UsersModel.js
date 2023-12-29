@@ -30,6 +30,8 @@ const createUser=(newUser,result)=>{
     })
 }
 
+
+/************User logged in*************/
 const userLogin=(userCred,result)=>{
     let email=userCred?.email;
     let password=userCred?.password;
@@ -40,13 +42,20 @@ const userLogin=(userCred,result)=>{
             result({status:false,message:"We cannot find an account with this email address."},null)
         }else{
             let correct_password=rows[0].password;
+            let user_id=rows[0].id;
             if(password){
                 bcrypt.compare(password,correct_password,(err,isMatch)=>{
                     if(err){
                         result({status:false,message:err.message},null)
                     }else if(isMatch){
                         const token = jwt.sign(rows[0],TOKEN_KEY,{ expiresIn: 60*60*24 });
-                        result(null,{status:true,message:"You are logged in now.",body:rows[0],token:token})
+                        conn.query("update users set is_logged_in=1 where id=?",user_id,(err,response)=>{
+                            if(err){
+                                result(err,null)
+                            }else{
+                                result(null,{status:true,message:"You are logged in now.",body:rows[0],token:token})
+                            }
+                        })
                     }else{
                         result({status:false,message:"Password does not match."},null)
                     }
@@ -56,9 +65,27 @@ const userLogin=(userCred,result)=>{
     })
 }
 
+
+/**************Logout account update status is_logged_in************/
+const logout_user=(user_id,result)=>{
+    try{
+        conn.query("update users set is_logged_in=0 where id=?",user_id,(err,response)=>{
+            if(err){
+
+            }else{
+                result(null,response)
+            }
+        })
+    }catch(error){
+
+    }
+}
+
 const getAllUsers=(user_data,result)=>{
     try{
-        conn.query("select * from users where id!=?",user_data.id,(err,rows)=>{
+        let query = `SELECT users.*, messages.timestamp FROM users LEFT JOIN messages on users.id=messages.receiver_id and (messages.sender_id=${user_data.id} or messages.receiver_id=${user_data.id}) where users.id!=${user_data.id} GROUP BY users.id order by messages.timestamp DESC`;
+
+        conn.query(query,(err,rows)=>{
             if(err){
                 result(err,null)
                 return;
@@ -221,6 +248,7 @@ const post_comment=(new_comment,result)=>{
                 result(err,null)
             }else{
                 if(res[0].count>0){
+                    console.log("new_comment",new_comment);
                     conn.query("insert into comments set ?",new_comment,(err,rows)=>{
                         if(err){
                             result(err,null)
@@ -281,6 +309,40 @@ const get_messages=(user_id,receiver_id,result)=>{
 
     }
 }
+
+const allUsers=(user_id,result)=>{
+    try{
+        conn.query("select * from users where id!=?",user_id,(err,response)=>{
+            if(err){
+                result(err,null)
+            }else{
+                result(null,response)
+            }
+        })
+    }catch(error){
+        result(error,null)
+    }
+}
+
+const createGroup=(user_id,group,result)=>{
+    try{
+        console.log(group);
+        // conn.query("INSERT INTO groups SET ?",group,(err,response)=>{
+            // conn.query('INSERT INTO messages SET ?', msg, (err, result) => {
+            conn.query("insert into groups set ?",group,(err,rows)=>{
+
+            if(err){
+                result(err,null)
+            }else{
+                result(null,response)
+                // conn.query("insert into group_users set ?",)
+            }
+        })
+    }catch(error){
+        result(error,null)
+    }
+}
+
 module.exports={
     createUser,
     userLogin,
@@ -296,4 +358,7 @@ module.exports={
     get_post_comments,
     delete_post_comments,
     get_messages,
+    logout_user,
+    allUsers,
+    createGroup,
 }

@@ -1,6 +1,7 @@
 const usersModel=require('./../Models/UsersModel')
 const common = require('./../helper/Common')
 const stripe = require('stripe')("sk_test_51OMPOYSIa9B2WEB5Khp2CY01ZHSHziw53DnFL0l2OqyEWVlWBaTYQSUEEAT61zysrByjshBAjWTxtUTXCm4V4Sa900pEDTj5aT");
+const { v4: uuidv4 } = require('uuid');
 
 /*******User Sign-Up*****/
 const createUser=async(req,res)=>{
@@ -481,6 +482,104 @@ const get_messages=(req,res)=>{
     }
 }
 
+const logout_user=(req,res)=>{
+    try{
+        let token=req.headers['authorization']
+        let data=common.getTokenData(token)
+        if(data){
+            let user_id=data.id;
+            usersModel.logout_user(user_id,(err,result)=>{
+                if(err){
+                    res.json({
+                        status:false,
+                        message:err.message
+                    })
+                }else{
+                    res.json({
+                        status:true,
+                        message:"You have logged out your account."
+                    })
+                }
+            })
+        }
+    }catch(error){
+
+    }
+}
+
+const allUsers=(req,res)=>{
+    try{
+        let token=req.headers['authorization']
+        let data=common.getTokenData(token);
+        if(data){
+            let user_id=data.id;
+            usersModel.allUsers(user_id,(err,result)=>{
+                if(err){
+                    res.json({
+                        status:false,
+                        message:err.message
+                    })
+                }else{
+                    res.json({
+                        status:true,
+                        message:"Users fetched successfully.",
+                        body:result
+                    })
+                }
+            })
+        }
+    }catch(error){
+        res.json({
+            status:false,
+            message:error
+        })
+    }
+}
+const createGroup=(req,res)=>{
+    try{
+        let params=req.body;
+        if(!params.title){
+            res.json({
+                status:false,
+                message:"All fields are required."
+            })
+        }else{
+            let token=req.headers['authorization']
+        
+            let data=common.getTokenData(token);
+            if(data){
+                let user_id=data.id;
+                let group={
+                    name:params.title,
+                    room_id:uuidv4(),
+                    // ids:params.ids
+                }
+                console.log("group",group);
+                usersModel.createGroup(user_id,group,(err,result)=>{
+                    if(err){
+                        res.json({
+                            status:false,
+                            message:err.message
+                        })
+                    }else{
+                        res.json({
+                            status:true,
+                            message:"Group has been created.",
+                            body:result
+                        })
+                    }
+                })
+            }
+        }
+
+    }catch(error){
+        res.json({
+            status:false,
+            message:error
+        })
+    }
+}
+
 module.exports={
     createUser,
     getAllUsers,
@@ -498,4 +597,7 @@ module.exports={
     get_post_comments,
     delete_post_comments,
     get_messages,
+    logout_user,
+    allUsers,
+    createGroup,
 }
