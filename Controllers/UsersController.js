@@ -545,17 +545,26 @@ const createGroup=(req,res)=>{
             })
         }else{
             let token=req.headers['authorization']
-        
+            
             let data=common.getTokenData(token);
+
             if(data){
                 let user_id=data.id;
+                let current_time=new Date();
                 let group={
-                    name:params.title,
+                    group_name:params.title,
                     room_id:uuidv4(),
-                    // ids:params.ids
+                    created_at:current_time,
+                    updated_at:current_time
                 }
-                console.log("group",group);
-                usersModel.createGroup(user_id,group,(err,result)=>{
+                let current_date=new Date();
+                let admin_msg={
+                    message_id:uuidv4(),
+                    sender_id:user_id,
+                    content:`${data.name} created this group`,
+                    timestamp:current_date
+                }
+                usersModel.createGroup(user_id,params.ids,group,admin_msg,(err,result)=>{
                     if(err){
                         res.json({
                             status:false,

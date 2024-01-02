@@ -324,24 +324,62 @@ const allUsers=(user_id,result)=>{
     }
 }
 
-const createGroup=(user_id,group,result)=>{
+const createGroup=async(admin_id,user_ids,group,admin_msg,result)=>{
     try{
-        console.log(group);
-        // conn.query("INSERT INTO groups SET ?",group,(err,response)=>{
-            // conn.query('INSERT INTO messages SET ?', msg, (err, result) => {
-            conn.query("insert into groups set ?",group,(err,rows)=>{
-
-            if(err){
-                result(err,null)
+            let group_ids=[];
+            if(user_ids){
+                group_ids=user_ids.split(",").map(Number);
+                group_ids.unshift(admin_id);
             }else{
-                result(null,response)
-                // conn.query("insert into group_users set ?",)
+                group_ids.push(admin_id)
             }
-        })
+            let add_users;
+            conn.query("insert into chat_groups set ?",group,async(err,response)=>{
+                if(err){
+                    result(err,null)
+                }else{
+                    let insertId=response?.insertId;
+                    admin_msg.group_id=insertId;
+                    conn.query("insert into messages set ?",admin_msg,async(err,res)=>{
+                        if(err){
+                            result(err,null)
+                        }else{
+                            add_users=group_ids.map((id,index)=>{
+                                return new Promise((resolve,reject)=>{
+                                    let current_date=new Date();
+                                    let new_user={
+                                        group_id : insertId,
+                                        user_id : id,
+                                        is_admin : (index==0)?1:0,
+                                        created_at : current_date,
+                                        updated_at : current_date
+                                    }
+                                    conn.query("insert into group_users set ?",new_user,(err,rows)=>{
+                                        if(err){
+                                            reject(err)
+                                        }else{
+                                            resolve(rows)
+                                        }
+                                    })
+                                })
+                            })
+        
+                            let results = await Promise.all(add_users);
+                            result(null,results)
+                        }
+
+                    })
+
+                }
+            })
+
     }catch(error){
         result(error,null)
     }
 }
+
+
+
 
 module.exports={
     createUser,
