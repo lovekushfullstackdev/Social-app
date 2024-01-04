@@ -589,6 +589,37 @@ const createGroup=(req,res)=>{
     }
 }
 
+
+const get_group_list=(req,res)=>{
+    try{
+        let token=req.headers['authorization']
+        let data=common.getTokenData(token);
+        if(data){
+            let user_id=data.id;
+            usersModel.get_group_list(user_id,(err,result)=>{
+                if(err){
+                    res.json({
+                        status:false,
+                        message:err.message
+                    })
+                }else{
+                    res.json({
+                        status:true,
+                        message:"Groups fetched successfully.",
+                        body:result
+                    })
+                }
+            })
+        }
+    }catch(error){
+        res.json({
+            status:false,
+            message:error
+        })
+    }
+}
+
+
 module.exports={
     createUser,
     getAllUsers,
@@ -609,4 +640,5 @@ module.exports={
     logout_user,
     allUsers,
     createGroup,
+    get_group_list,
 }

@@ -2,13 +2,14 @@ const hostname = '192.168.5.205';
 const port = 8000;
 const express = require('express')
 const app = express()
-const firstController = require('./Controllers/UsersController')
-const auth = require('./middlewares/auth')
+// const firstController = require('./Controllers/UsersController')
+// const auth = require('./middlewares/auth')
 const bodyParser = require("body-parser");
 const { Server } = require('socket.io');
 const http = require('http');
 const server = http.createServer(app);
 const { v4: uuidv4 } = require('uuid');
+const routing = require('./Routing/routing');
 
 const conn=require("./config/Config")
 
@@ -24,48 +25,52 @@ const io=new Server(server,{
   }
 })
 
-// server.use(cors())
-
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 app.use(fileupload());
+
 
 app.get('/', function(req, res) {
     res.send('Hello Sir')
 })
 
-app.get('/getUsersList', auth.verifyAuthToken,firstController.getAllUsers)
-app.post('/createUser', firstController.createUser)
-app.post('/userLogin', firstController.userLogin)
-app.post('/deleteUser', firstController.deleteUser)
-app.post('/updateProfile',auth.verifyAuthToken,firstController.updateProfile)
-app.post('/upload_post',auth.verifyAuthToken,firstController.upload_post);
-app.get('/get_user_profile',auth.verifyAuthToken,firstController.get_user_profile);
-app.get('/get_user_posts',auth.verifyAuthToken,firstController.get_user_posts);
-app.get('/get_all_posts',auth.verifyAuthToken,firstController.get_all_posts);
-app.post('/delete_post',auth.verifyAuthToken,firstController.delete_post);
-app.post('/create-payment-intent',firstController.createPaymentIntent);
-app.post('/post-like',auth.verifyAuthToken,firstController.post_like);
-app.post('/post-comment',auth.verifyAuthToken,firstController.post_comment);
-app.get('/get-post-comments/:post_id',auth.verifyAuthToken,firstController.get_post_comments);
-app.delete('/delete-post-comments/:id',auth.verifyAuthToken,firstController.delete_post_comments);
-app.get('/get-messages/:receiver_id',auth.verifyAuthToken,firstController.get_messages);
-app.post('/logout-user',auth.verifyAuthToken,firstController.logout_user);
-app.get('/get-all-users',auth.verifyAuthToken,firstController.allUsers); // Add users in group
-// app.get('/get-group-users-',auth.verifyAuthToken,firstController.allUsers); // Add users in group
-app.post('/create-group',auth.verifyAuthToken,firstController.createGroup)
+app.use('/',routing);
+// app.use('/', userController);
 
+// app.get('/getUsersList', auth.verifyAuthToken,firstController.getAllUsers)
+// app.post('/createUser', firstController.createUser)
+// app.post('/userLogin', firstController.userLogin)
+// app.post('/deleteUser', firstController.deleteUser)
+// app.post('/updateProfile',auth.verifyAuthToken,firstController.updateProfile)
+// app.post('/upload_post',auth.verifyAuthToken,firstController.upload_post);
+// app.get('/get_user_profile',auth.verifyAuthToken,firstController.get_user_profile);
+// app.get('/get_user_posts',auth.verifyAuthToken,firstController.get_user_posts);
+// app.get('/get_all_posts',auth.verifyAuthToken,firstController.get_all_posts);
+// app.post('/delete_post',auth.verifyAuthToken,firstController.delete_post);
+// app.post('/create-payment-intent',firstController.createPaymentIntent);
+// app.post('/post-like',auth.verifyAuthToken,firstController.post_like);
+// app.post('/post-comment',auth.verifyAuthToken,firstController.post_comment);
+// app.get('/get-post-comments/:post_id',auth.verifyAuthToken,firstController.get_post_comments);
+// app.delete('/delete-post-comments/:id',auth.verifyAuthToken,firstController.delete_post_comments);
+// app.get('/get-messages/:receiver_id',auth.verifyAuthToken,firstController.get_messages);
+// app.post('/logout-user',auth.verifyAuthToken,firstController.logout_user);
+// app.get('/get-all-users',auth.verifyAuthToken,firstController.allUsers); // Add users in group
+// app.post('/create-group',auth.verifyAuthToken,firstController.createGroup)
+// app.get('/get-group-list',auth.verifyAuthToken,firstController.get_group_list)
 
 io.on("connection",async(socket)=>{
   
   socket.on("join_room",(data)=>{
     socket.join(data.room_id)
-
     let to_user_id=data.to_user_id;
     let user_id=data.user_id;
     getMeesages(user_id,to_user_id,(callbacks)=>{
       io.to(data.room_id).emit("get_messages",callbacks)
     })
+  })
+
+  socket.on("leave_room",(room_id)=>{
+    socket.leave(room_id);
   })
 
   socket.on("send_msg",(data)=>{

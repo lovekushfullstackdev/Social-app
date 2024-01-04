@@ -378,7 +378,19 @@ const createGroup=async(admin_id,user_ids,group,admin_msg,result)=>{
     }
 }
 
-
+const get_group_list=(user_id,result)=>{
+    try{
+        conn.query("select chat_groups.*,group_users.* from group_users left join chat_groups on group_users.group_id=chat_groups.id where user_id=?",user_id,(err,response)=>{
+            if(err){
+                result(err,null)
+            }else{
+                result(null,response)
+            }
+        })
+    }catch(error){
+        result(error,null)
+    }
+}
 
 
 module.exports={
@@ -399,4 +411,5 @@ module.exports={
     logout_user,
     allUsers,
     createGroup,
+    get_group_list,
 }
